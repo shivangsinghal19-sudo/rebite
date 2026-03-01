@@ -12,3 +12,11 @@ export default defineConfig({
     port: 5173,
   },
 })
+
+VitePWA({
+  registerType: 'autoUpdate',
+  workbox: {
+    skipWaiting: true,
+    clientsClaim: true,
+  }
+})

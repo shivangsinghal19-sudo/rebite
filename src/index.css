@@ -1,37 +1,4 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-
-    <!-- PWA Icons — uses icon-192.png and icon-512.png from /public -->
-    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
-
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json" />
-
-    <!-- Theme + viewport -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#2D6A4F" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="ReBite" />
-
-    <!-- SEO -->
-    <meta name="description" content="Save surplus food from Delhi restaurants at up to 80% off. Good for you, great for the planet." />
-    <meta name="application-name" content="ReBite" />
-
-    <!-- Open Graph (WhatsApp / social share) -->
-    <meta property="og:title" content="ReBite — Save Food, Save Money 🌱" />
-    <meta property="og:description" content="Rescue surplus food from top Delhi restaurants. Up to 80% off every night." />
-    <meta property="og:image" content="/icon-512.png" />
-    <meta property="og:type" content="website" />
-
-    <title>ReBite — Save Food, Save Money</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
-</html>
+body {
+  margin: 0;
+  font-family: sans-serif;
+}

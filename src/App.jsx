@@ -71,7 +71,7 @@ function Splash({onDone}){
       <div style={{textAlign:"center",opacity:ph===0?0:1,transform:ph===0?"scale(0.7)":"scale(1)",transition:"all 0.5s cubic-bezier(0.34,1.56,0.64,1)"}}>
         <div style={{width:90,height:90,borderRadius:24,background:"linear-gradient(135deg,#F9C74F,#F4845F)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:48,margin:"0 auto 16px",boxShadow:"0 0 80px rgba(249,199,79,0.5)"}}>♻️</div>
         <div style={{fontSize:44,fontWeight:800,color:"#fff",fontFamily:"system-ui,sans-serif",letterSpacing:-2}}>Re<span style={{color:"#52B788"}}>Bite</span></div>
-        <div style={{fontSize:12,color:"rgba(255,255,255,0.4)",letterSpacing:3,marginTop:8,opacity:ph>=1?1:0,transition:"opacity 0.4s 0.4s",fontFamily:"system-ui"}}>SAVE FOOD · SAVE DELHI</div>
+        <div style={{fontSize:12,color:"rgba(255,255,255,0.4)",letterSpacing:3,marginTop:8,opacity:ph>=1?1:0,transition:"opacity 0.4s 0.4s",fontFamily:"system-ui"}}>SAVE FOOD · SAVE MONEY</div>
       </div>
     </div>
   );

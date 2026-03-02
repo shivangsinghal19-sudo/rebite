@@ -399,7 +399,7 @@ function NutritionPage({orders}){
 }
 
 /* ── You Page (Profile + Rewards + Refer) ── */
-function YouPage({orders,streak,dark,setDark,showToast,notifPerm,onEnableNotif}){
+function YouPage({orders,streak,dark,setDark,showToast,notifPerm,onEnableNotif,addresses,activeAddr,setActiveAddr,setAddresses}){
   const[sub,setSub]=useState("home");
   const tBags=orders.length;
   const tSavings=orders.reduce((s,o)=>s+o.savings,0);
@@ -496,6 +496,11 @@ function YouPage({orders,streak,dark,setDark,showToast,notifPerm,onEnableNotif})
           ))}
         </div>
       </>}
+      {sub==="addrmgmt"&&<>
+        <div style={{fontWeight:800,fontSize:20,marginBottom:4,color:"var(--dark)",fontFamily:"system-ui"}}>My Addresses 📍</div>
+        <div style={{fontSize:12,color:"var(--gray)",marginBottom:16}}>Manage your delivery addresses</div>
+        <AddrPicker addresses={addresses} activeAddr={activeAddr} setActiveAddr={idx=>{setActiveAddr(idx);showToast("📍 Default address updated!");}} setAddresses={setAddresses} onClose={()=>{}} toast={showToast} inline={true}/>
+      </>}
       {sub==="orders"&&<>
         <div style={{fontWeight:800,fontSize:20,marginBottom:4,color:"var(--dark)",fontFamily:"system-ui"}}>My Orders 📦</div>
         {orders.length===0?(
@@ -542,7 +547,7 @@ function YouPage({orders,streak,dark,setDark,showToast,notifPerm,onEnableNotif})
         ))}
       </div>
       <div style={{background:"var(--card)",borderRadius:16,overflow:"hidden",marginBottom:14,border:"1px solid var(--border)"}}>
-        {[["🏆","Rewards & Streaks","rewards"],["🤝","Refer & Earn ₹50","refer"],["🔔","Notifications","notifs"],["📦","My Orders","orders"]].map(([ic,lb,id])=>(
+        {[["🏆","Rewards & Streaks","rewards"],["🤝","Refer & Earn ₹50","refer"],["🔔","Notifications","notifs"],["📦","My Orders","orders"],["📍","My Addresses","addrmgmt"]].map(([ic,lb,id])=>(
           <div key={lb} onClick={()=>setSub(id)} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderBottom:"1px solid var(--border)",cursor:"pointer"}}>
             <div style={{fontSize:17,width:36,height:36,background:"var(--bg)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{ic}</div>
             <div style={{flex:1,fontSize:13,fontWeight:600,color:"var(--dark)"}}>{lb}</div>
@@ -603,6 +608,150 @@ function Reviews({bagId}){
 }
 
 
+
+/* ── Address Picker Modal ── */
+function AddrPicker({addresses,activeAddr,setActiveAddr,setAddresses,onClose,toast,inline=false}){
+  const[addMode,setAddMode]=useState(false);
+  const[form,setForm]=useState({label:"",icon:"🏠",line1:"",line2:""});
+  const labelOpts=[["🏠","Home"],["🏢","Work"],["❤️","Partner"],["👨‍👩‍👧","Family"],["🏋️","Gym"],["📍","Other"]];
+  function save(){
+    if(!form.label||!form.line1)return;
+    const newA={id:Date.now(),...form,isDefault:false};
+    setAddresses(p=>[...p,newA]);
+    toast("📍 Address saved!");
+    setAddMode(false);setForm({label:"",icon:"🏠",line1:"",line2:""});
+  }
+  function setDefault(idx){setActiveAddr(idx);toast("📍 Delivery address updated!");onClose();}
+  function removeAddr(idx){setAddresses(p=>p.filter((_,i)=>i!==idx));if(activeAddr>=idx&&activeAddr>0)setActiveAddr(activeAddr-1);}
+  if(inline){
+    return(
+      <div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+          {!addMode&&<button onClick={()=>setAddMode(true)} style={{background:"#2D6A4F",color:"#fff",border:"none",borderRadius:10,padding:"7px 13px",fontWeight:700,fontSize:12,cursor:"pointer",fontFamily:"system-ui"}}>+ Add New</button>}
+          {addMode&&<button onClick={()=>setAddMode(false)} style={{background:"none",border:"1px solid var(--border)",borderRadius:10,padding:"7px 13px",fontWeight:700,fontSize:12,cursor:"pointer",color:"var(--gray)",fontFamily:"system-ui"}}>← Back</button>}
+        </div>
+        {addMode?(
+          <div>
+            <div style={{marginBottom:12}}>
+              <div style={{fontWeight:700,fontSize:11,color:"var(--gray)",textTransform:"uppercase",letterSpacing:0.7,marginBottom:8}}>Type</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                {labelOpts.map(([ic,lb])=>(
+                  <button key={lb} onClick={()=>setForm(p=>({...p,icon:ic,label:lb}))} style={{padding:"7px 13px",borderRadius:20,border:`1.5px solid ${form.label===lb?"#2D6A4F":"var(--border)"}`,background:form.label===lb?"#2D6A4F":"var(--card)",color:form.label===lb?"#fff":"var(--dark)",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"system-ui",display:"flex",alignItems:"center",gap:5}}>{ic} {lb}</button>
+                ))}
+              </div>
+            </div>
+            <div style={{marginBottom:10}}>
+              <input value={form.line1} onChange={e=>setForm(p=>({...p,line1:e.target.value}))} style={{width:"100%",border:"1.5px solid var(--border)",borderRadius:12,padding:"12px 14px",fontSize:13,outline:"none",color:"var(--dark)",background:"var(--bg)",fontFamily:"system-ui",marginBottom:8}} placeholder="Street / Building (e.g. B-42, Vasant Kunj)"/>
+              <input value={form.line2} onChange={e=>setForm(p=>({...p,line2:e.target.value}))} style={{width:"100%",border:"1.5px solid var(--border)",borderRadius:12,padding:"12px 14px",fontSize:13,outline:"none",color:"var(--dark)",background:"var(--bg)",fontFamily:"system-ui"}} placeholder="Area / Pincode (e.g. New Delhi - 110070)"/>
+            </div>
+            <button onClick={save} style={{width:"100%",background:"#2D6A4F",color:"#fff",border:"none",borderRadius:12,padding:13,fontWeight:800,cursor:"pointer",fontFamily:"system-ui",marginTop:4}}>💾 Save Address</button>
+          </div>
+        ):(
+          addresses.map((a,i)=>(
+            <div key={a.id||i} style={{background:i===activeAddr?"var(--gp)":"var(--card)",borderRadius:14,padding:"13px 14px",marginBottom:10,border:`1.5px solid ${i===activeAddr?"#2D6A4F":"var(--border)"}`,cursor:"pointer"}} onClick={()=>setActiveAddr(i)}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <div style={{width:40,height:40,borderRadius:12,background:i===activeAddr?"#2D6A4F":"var(--bg)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{a.icon}</div>
+                <div style={{flex:1}}><div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}><span style={{fontWeight:800,fontSize:14,color:"var(--dark)",fontFamily:"system-ui"}}>{a.label}</span>{i===activeAddr&&<span style={{fontSize:9,background:"#2D6A4F",color:"#fff",borderRadius:8,padding:"2px 7px",fontWeight:700}}>DEFAULT</span>}</div><div style={{fontSize:11,color:"var(--gray)"}}>{a.line1} · {a.line2}</div></div>
+                <div style={{display:"flex",gap:6,alignItems:"center"}}>{i===activeAddr&&<span style={{fontSize:18,color:"#2D6A4F"}}>✓</span>}{addresses.length>1&&<button onClick={e=>{e.stopPropagation();removeAddr(i);}} style={{background:"none",border:"1px solid var(--border)",borderRadius:8,width:26,height:26,cursor:"pointer",fontSize:12,color:"var(--gray)",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>}</div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    );
+  }
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:850,display:"flex",flexDirection:"column",justifyContent:"flex-end"}} onClick={onClose}>
+      <div style={{background:"rgba(0,0,0,0.5)",position:"absolute",inset:0,backdropFilter:"blur(4px)"}}/>
+      <div style={{background:"var(--card)",borderRadius:"24px 24px 0 0",padding:"20px 16px 36px",maxHeight:"85vh",overflowY:"auto",position:"relative",zIndex:1}} onClick={e=>e.stopPropagation()}>
+        <div style={{width:36,height:4,background:"var(--border)",borderRadius:4,margin:"0 auto 18px"}}/>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <div style={{fontWeight:800,fontSize:18,color:"var(--dark)",fontFamily:"system-ui"}}>{addMode?"Add New Address":"Delivery Address 📍"}</div>
+          {!addMode&&<button onClick={()=>setAddMode(true)} style={{background:"#2D6A4F",color:"#fff",border:"none",borderRadius:10,padding:"7px 13px",fontWeight:700,fontSize:12,cursor:"pointer",fontFamily:"system-ui"}}>+ Add</button>}
+        </div>
+        {addMode?(
+          <div>
+            <div style={{marginBottom:12}}>
+              <div style={{fontWeight:700,fontSize:11,color:"var(--gray)",textTransform:"uppercase",letterSpacing:0.7,marginBottom:8}}>Type</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                {labelOpts.map(([ic,lb])=>(
+                  <button key={lb} onClick={()=>setForm(p=>({...p,icon:ic,label:lb}))} style={{padding:"7px 13px",borderRadius:20,border:`1.5px solid ${form.label===lb?"#2D6A4F":"var(--border)"}`,background:form.label===lb?"#2D6A4F":"var(--card)",color:form.label===lb?"#fff":"var(--dark)",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"system-ui",display:"flex",alignItems:"center",gap:5}}>{ic} {lb}</button>
+                ))}
+              </div>
+            </div>
+            <div style={{marginBottom:10}}>
+              <div style={{fontWeight:700,fontSize:11,color:"var(--gray)",textTransform:"uppercase",letterSpacing:0.7,marginBottom:6}}>Street / Building</div>
+              <input value={form.line1} onChange={e=>setForm(p=>({...p,line1:e.target.value}))} style={{width:"100%",border:"1.5px solid var(--border)",borderRadius:12,padding:"12px 14px",fontSize:13,outline:"none",color:"var(--dark)",background:"var(--bg)",fontFamily:"system-ui"}} placeholder="e.g. B-42, Vasant Kunj"/>
+            </div>
+            <div style={{marginBottom:16}}>
+              <div style={{fontWeight:700,fontSize:11,color:"var(--gray)",textTransform:"uppercase",letterSpacing:0.7,marginBottom:6}}>Area / Pincode</div>
+              <input value={form.line2} onChange={e=>setForm(p=>({...p,line2:e.target.value}))} style={{width:"100%",border:"1.5px solid var(--border)",borderRadius:12,padding:"12px 14px",fontSize:13,outline:"none",color:"var(--dark)",background:"var(--bg)",fontFamily:"system-ui"}} placeholder="e.g. New Delhi - 110070"/>
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>setAddMode(false)} style={{flex:1,background:"var(--bg)",border:"none",borderRadius:12,padding:13,fontWeight:700,cursor:"pointer",color:"var(--gray)",fontFamily:"system-ui"}}>Cancel</button>
+              <button onClick={save} style={{flex:2,background:"#2D6A4F",color:"#fff",border:"none",borderRadius:12,padding:13,fontWeight:800,cursor:"pointer",fontFamily:"system-ui"}}>💾 Save Address</button>
+            </div>
+          </div>
+        ):(
+          addresses.map((a,i)=>(
+            <div key={a.id||i} style={{background:i===activeAddr?"var(--gp)":"var(--card)",borderRadius:14,padding:"13px 14px",marginBottom:10,border:`1.5px solid ${i===activeAddr?"#2D6A4F":"var(--border)"}`,cursor:"pointer"}} onClick={()=>setDefault(i)}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <div style={{width:40,height:40,borderRadius:12,background:i===activeAddr?"#2D6A4F":"var(--bg)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{a.icon}</div>
+                <div style={{flex:1}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+                    <span style={{fontWeight:800,fontSize:14,color:"var(--dark)",fontFamily:"system-ui"}}>{a.label}</span>
+                    {i===activeAddr&&<span style={{fontSize:9,background:"#2D6A4F",color:"#fff",borderRadius:8,padding:"2px 7px",fontWeight:700}}>DEFAULT</span>}
+                  </div>
+                  <div style={{fontSize:12,color:"var(--gray)"}}>{a.line1}</div>
+                  <div style={{fontSize:11,color:"var(--gray)"}}>{a.line2}</div>
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  {i===activeAddr&&<span style={{fontSize:18,color:"#2D6A4F"}}>✓</span>}
+                  {addresses.length>1&&<button onClick={e=>{e.stopPropagation();removeAddr(i);}} style={{background:"none",border:"1px solid var(--border)",borderRadius:8,width:26,height:26,cursor:"pointer",fontSize:12,color:"var(--gray)",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+/* ── Live Order Tracker ── */
+function LiveTracker({order,step,onDismiss}){
+  const steps=["Order Confirmed","Restaurant Preparing","Ready for Pickup!"];
+  const colors=["#F9C74F","#F4845F","#2D6A4F"];
+  const icons=["✅","👨‍🍳","🎉"];
+  return(
+    <div style={{position:"absolute",bottom:90,left:14,right:14,background:"var(--card)",borderRadius:20,padding:16,border:`2px solid ${colors[step]||"#2D6A4F"}`,boxShadow:"0 8px 32px rgba(0,0,0,0.18)",zIndex:300,animation:"fu 0.3s ease"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
+        <div>
+          <div style={{fontWeight:800,fontSize:13,color:"var(--dark)",fontFamily:"system-ui"}}>🛍️ {order.name}</div>
+          <div style={{fontSize:11,color:"var(--gray)",marginTop:2}}>Order #{order.id}</div>
+        </div>
+        <button onClick={onDismiss} style={{background:"none",border:"none",cursor:"pointer",fontSize:16,color:"var(--gray)",padding:0}}>✕</button>
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:10}}>
+        {steps.map((s,i)=>(
+          <div key={s} style={{display:"flex",alignItems:"center",flex:i<steps.length-1?1:"none"}}>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+              <div style={{width:28,height:28,borderRadius:"50%",background:i<=step?colors[i]:"var(--border)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,transition:"all 0.4s"}}>{i<=step?icons[i]:"·"}</div>
+              <div style={{fontSize:8,fontWeight:700,color:i<=step?colors[i]:"var(--gray)",textAlign:"center",width:50,lineHeight:1.2}}>{s}</div>
+            </div>
+            {i<steps.length-1&&<div style={{flex:1,height:2,background:i<step?colors[i]:"var(--border)",margin:"0 2px 16px",transition:"all 0.4s"}}/>}
+          </div>
+        ))}
+      </div>
+      <div style={{background:`${colors[step]||"#2D6A4F"}20`,borderRadius:10,padding:"8px 12px",display:"flex",alignItems:"center",gap:8}}>
+        <span style={{fontSize:16}}>{icons[step]||"🎉"}</span>
+        <span style={{fontSize:12,fontWeight:700,color:colors[step]||"#2D6A4F",fontFamily:"system-ui"}}>{step<steps.length?steps[step]:"Enjoy your meal! 😋"}</span>
+      </div>
+    </div>
+  );
+}
+
 /* ── SavedCard (extracted to avoid hook-in-map) ── */
 function SavedCard({bag,onRemove,onOpen}){
   const{t,u}=useCountdown(bag.pickup_end);
@@ -659,6 +808,14 @@ export default function App(){
   const[notifPerm,setNotifPerm]=useState(typeof Notification!=="undefined"?Notification.permission:"default");
   const[flashSale,setFlashSale]=useState(null);
   const[flashTimer,setFlashTimer]=useState(0);
+  const[showAddrPicker,setShowAddrPicker]=useState(false);
+  const[liveOrder,setLiveOrder]=useState(null);
+  const[liveStep,setLiveStep]=useState(0);
+  const[addresses,setAddresses]=useState([
+    {id:1,label:"Home",icon:"🏠",line1:"B-42, Vasant Kunj",line2:"New Delhi - 110070",isDefault:true},
+    {id:2,label:"Work",icon:"🏢",line1:"Connaught Place, Block A",line2:"New Delhi - 110001",isDefault:false},
+  ]);
+  const[activeAddr,setActiveAddr]=useState(0);
   const ddRef=useRef(null);
 
   useEffect(()=>{
@@ -754,7 +911,11 @@ export default function App(){
     setOrders(p=>[...newOrders,...p]);
     setStreak(s=>s+1);
     showToast("🎉 Order placed! (+100 pts)");
+    setLiveOrder(newOrders[0]);setLiveStep(0);
     setCart([]);setShowCart(false);
+    // Simulate order progress
+    [1000,4000,8000].forEach((ms,i)=>setTimeout(()=>setLiveStep(i+1),ms));
+    setTimeout(()=>setLiveOrder(null),12000);
   }
 
   const tSavings=orders.reduce((s,o)=>s+o.savings,0);
@@ -824,13 +985,24 @@ body{font-family:system-ui,-apple-system,sans-serif;background:${D?"#060d07":"#E
               <div style={{fontSize:24,fontWeight:800,color:"#fff",letterSpacing:-1.5,fontFamily:"system-ui"}}>Re<span style={{color:"#95D5B2"}}>Bite</span></div>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <button onClick={()=>setShowBlind(true)} style={{background:"linear-gradient(135deg,#7C3AED,#4C1D95)",border:"none",borderRadius:20,padding:"5px 12px",color:"#fff",fontWeight:800,fontSize:11,cursor:"pointer",fontFamily:"system-ui",display:"flex",alignItems:"center",gap:5}}>🎰 Blind</button>
+              {/* Dark/Light toggle — Zomato style */}
+              <button onClick={()=>setDark(d=>!d)} style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:20,padding:"6px 11px",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:6,backdropFilter:"blur(4px)"}}>
+                <span style={{fontSize:14}}>{dark?"☀️":"🌙"}</span>
+                <span style={{fontFamily:"system-ui"}}>{dark?"Light":"Dark"}</span>
+              </button>
               <div onClick={()=>setTab("you")} style={{width:34,height:34,borderRadius:"50%",background:"linear-gradient(135deg,#F9C74F,#F4845F)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,cursor:"pointer",border:`2px solid ${tab==="you"?"#fff":"rgba(255,255,255,0.3)"}`,transition:"border-color 0.2s"}}>🧑</div>
             </div>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:5,color:"rgba(255,255,255,0.7)",fontSize:11}}>
-            <div style={{width:6,height:6,background:"#F9C74F",borderRadius:"50%"}}/>
-            New Delhi · {streak}🔥 streak · {orders.length} bags saved
+          {/* Address bar — Zomato style */}
+          <div onClick={()=>setShowAddrPicker(true)} style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",marginTop:2}}>
+            <span style={{fontSize:14}}>📍</span>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{display:"flex",alignItems:"center",gap:4}}>
+                <span style={{fontWeight:800,fontSize:14,color:"#fff",fontFamily:"system-ui"}}>{addresses[activeAddr]?.label||"Home"}</span>
+                <span style={{fontSize:10,color:"rgba(255,255,255,0.5)"}}>▾</span>
+              </div>
+              <div style={{fontSize:11,color:"rgba(255,255,255,0.65)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{addresses[activeAddr]?.line1||"New Delhi"} · {streak}🔥 streak</div>
+            </div>
           </div>
         </div>
         <div className="ticker"><div className="ticker-inner">{[...FACTS,...FACTS].map((f,i)=><span key={i} className="ticker-item">{f}</span>)}</div></div>
@@ -926,6 +1098,32 @@ body{font-family:system-ui,-apple-system,sans-serif;background:${D?"#060d07":"#E
             </div>
           )}
 
+          {/* Today's picks personalization */}
+          {orders.length>0&&(
+            <div style={{margin:"0 14px 8px",background:"var(--gp)",borderRadius:14,padding:"10px 13px",border:"1px solid rgba(45,106,79,0.15)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:18}}>🌱</span>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:800,fontSize:12,color:"#2D6A4F",fontFamily:"system-ui"}}>Your eco impact this week</div>
+                  <div style={{fontSize:11,color:"#52B788",marginTop:1}}>Saved {orders.length} bags · {(orders.length*CO2_PER_BAG).toFixed(1)}kg CO2 prevented · ₹{orders.reduce((s,o)=>s+o.savings,0)} saved</div>
+                </div>
+                <div style={{width:36,height:36,borderRadius:"50%",background:"#2D6A4F",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:"#fff",fontWeight:800,fontFamily:"system-ui"}}>{Math.min(99,orders.length*10)}</div>
+              </div>
+            </div>
+          )}
+          {/* Trending / Category quick picks */}
+          <div style={{padding:"0 14px 8px"}}>
+            <div style={{fontWeight:800,fontSize:14,color:"var(--dark)",fontFamily:"system-ui",marginBottom:10}}>Quick Pick 🎯</div>
+            <div style={{display:"flex",gap:8,overflowX:"auto",scrollbarWidth:"none"}}>
+              {[{icon:"🥐",label:"Bakery",color:"#F9C74F"},{icon:"🍛",label:"Meal",color:"#F4845F"},{icon:"🧁",label:"Dessert",color:"#EC4899"},{icon:"☕",label:"Cafe",color:"#8B5CF6"},{icon:"🍽️",label:"Fine Dining",color:"#2D6A4F"},{icon:"🍱",label:"Buffet",color:"#E23744"}].map(t=>(
+                <div key={t.label} onClick={()=>setTypeFilter(f=>f===t.label?"All":t.label)} style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:5,cursor:"pointer"}}>
+                  <div style={{width:52,height:52,borderRadius:16,background:typeFilter===t.label?t.color:"var(--card)",border:`2px solid ${typeFilter===t.label?t.color:"var(--border)"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,transition:"all 0.15s",transform:typeFilter===t.label?"scale(1.08)":"scale(1)"}}>{t.icon}</div>
+                  <div style={{fontSize:9,fontWeight:700,color:typeFilter===t.label?"#2D6A4F":"var(--gray)",textTransform:"uppercase",letterSpacing:0.3}}>{t.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div style={{padding:"0 14px",marginBottom:8}}>
             <div style={{fontWeight:800,fontSize:15,color:"var(--dark)",fontFamily:"system-ui"}}>Tonight's Bags 🛍️</div>
           </div>
@@ -956,7 +1154,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:${D?"#060d07":"#E
 
         {tab==="map"&&<MapPage bags={bags} enriched={enriched} onAreaSelect={a=>{setAreaFilter(a);setTab("home");}}/>}
         {tab==="nutrition"&&<NutritionPage orders={orders}/>}
-        {tab==="you"&&<YouPage orders={orders} streak={streak} dark={dark} setDark={setDark} showToast={showToast} notifPerm={notifPerm} onEnableNotif={handleNotif}/>}
+        {tab==="you"&&<YouPage orders={orders} streak={streak} dark={dark} setDark={setDark} showToast={showToast} notifPerm={notifPerm} onEnableNotif={handleNotif} addresses={addresses} activeAddr={activeAddr} setActiveAddr={setActiveAddr} setAddresses={setAddresses}/>}
 
         {/* SAVED — inline */}
         {tab==="saved"&&<div style={{padding:"16px 14px",animation:"fu 0.3s ease"}}>
@@ -991,7 +1189,6 @@ body{font-family:system-ui,-apple-system,sans-serif;background:${D?"#060d07":"#E
           {id:"map",icon:"🗺️",label:"Map"},
           {id:"nutrition",icon:"📊",label:"Nutrition"},
           {id:"saved",icon:"🔖",label:"Saved"},
-          {id:"you",icon:"👤",label:"You"},
         ].map(n=>(
           <div key={n.id} className={`rni${tab===n.id?" on":""}`} onClick={()=>setTab(n.id)}>
             <span className="rni-icon">{n.icon}</span>
@@ -1115,11 +1312,17 @@ body{font-family:system-ui,-apple-system,sans-serif;background:${D?"#060d07":"#E
       {/* WAITLIST */}
       {waitBag&&<WaitlistModal bag={waitBag} onClose={()=>setWaitBag(null)} toast={showToast}/>}
 
+      {/* ADDRESS PICKER */}
+      {showAddrPicker&&<AddrPicker addresses={addresses} activeAddr={activeAddr} setActiveAddr={setActiveAddr} setAddresses={setAddresses} onClose={()=>setShowAddrPicker(false)} toast={showToast}/>}
+
       {/* BLIND BAG */}
       {showBlind&&<BlindBagModal bags={enriched} onClose={()=>setShowBlind(false)} toast={showToast}
         onOrder={(bag)=>{addToCart({...bag,price:49},"pickup",bag.pickup_start,"");}}/>}
 
       {/* TOAST */}
+      {/* LIVE ORDER TRACKER */}
+      {liveOrder&&<LiveTracker order={liveOrder} step={liveStep} onDismiss={()=>setLiveOrder(null)}/>}
+
       {toast&&<div key={toastK} className="toast">{toast}</div>}
 
     </div>

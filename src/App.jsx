@@ -12,7 +12,7 @@ const CO2_PER_BAG=1.2;
 const VEG_TYPES=new Set(["Bakery","Dessert","Cafe"]);
 const isVeg=b=>VEG_TYPES.has(b.type);
 const getDisc=b=>b.original_price>0?Math.round(((b.original_price-b.price)/b.original_price)*100):0;
-const FACTS=["🌍 1/3 of all food produced is wasted","🌱 One ReBite bag saves ~1.2kg CO2","💧 A burger takes 2,400L of water","🇮🇳 India wastes ₹92,000cr of food/year","♻️ Food waste produces methane — 25x worse than CO2","🥗 ReBite saves up to 80% vs menu price"];
+const FACTS=["🌍 1/3 of all food produced is wasted globally","🌱 One ReBite bag saves ~1.2kg of CO2 emissions","💧 Growing one burger needs 2,400 litres of water","🇮🇳 India wastes ₹92,000 crore worth of food every year","♻️ Food waste generates methane — 25x worse than CO2","🥗 ReBite bags save up to 80% vs regular menu prices","🏙️ Delhi alone discards 3,000 tonnes of food every day","🌾 40% of food is lost before it ever reaches your plate","🍕 Restaurants throw away 30–40% of food they purchase","💸 The average Indian family wastes ₹20,000 of food yearly","🐄 Producing beef uses 10x more water than vegetables","🤝 ReBite has collectively saved 4.2 tonnes of CO2","📦 Every ReBite bag directly saves a restaurant from loss","🥡 Surprise bags make food rescue exciting and affordable","⭐ 94% of ReBite users discovered a new favourite spot","🔥 Flash deals drop every few minutes — stay sharp!","🌿 Skipping meat once a week saves 584 litres of water","🍞 Bread is the single most wasted food in Indian homes","🌏 If food waste were a country it would be the 3rd biggest CO2 emitter","🥬 Vegetables left unsold = 21% of farm-level food waste in India","📱 ReBite users save an average of ₹1,200 per month","🌡️ Reducing food waste is the #1 climate solution per Project Drawdown","🎯 One surprise bag = one less trip to the landfill","🏆 ReBite Delhi — saving food one bag at a time"];
 const MACROS={Bakery:{cal:420,p:8,c:62,f:16},Meal:{cal:580,p:22,c:75,f:14},Dessert:{cal:350,p:5,c:55,f:14},Cafe:{cal:280,p:6,c:38,f:10},"Fine Dining":{cal:650,p:32,c:45,f:28},Buffet:{cal:780,p:28,c:90,f:22}};
 const GOALS={cal:2000,p:60,c:250,f:65};
 const BADGES=[{id:"b1",icon:"🌱",name:"First Save",req:1},{id:"b2",icon:"🔥",name:"5 Bags",req:5},{id:"b3",icon:"⭐",name:"10 Bags",req:10},{id:"b4",icon:"💫",name:"3-Day Streak",req:3,type:"streak"},{id:"b5",icon:"🏆",name:"Week Legend",req:7,type:"streak"},{id:"b6",icon:"🌍",name:"Eco Warrior",req:5,type:"co2"},{id:"b7",icon:"🤝",name:"Referrer",req:1,type:"ref"}];
@@ -573,6 +573,7 @@ function YouPage({orders,streak,dark,setDark,showToast,notifPerm,onEnableNotif,a
 function Reviews({bagId}){
   const[reviews,setReviews]=useState([{id:1,user:"Priya S.",rating:5,text:"Amazing value! 4 croissants and a loaf of bread.",time:"2 days ago",helpful:12},{id:2,user:"Rahul M.",rating:4,text:"Fresh food, great quantity. Will order again!",time:"5 days ago",helpful:7}]);
   const[showForm,setShowForm]=useState(false);const[nr,setNr]=useState({rating:5,text:""});
+  const[voted,setVoted]=useState(new Set());
   const avg=(reviews.reduce((s,r)=>s+r.rating,0)/reviews.length).toFixed(1);
   return(
     <div style={{marginBottom:12}}>
@@ -601,7 +602,7 @@ function Reviews({bagId}){
             <span style={{fontSize:9,color:"var(--gray)"}}>{r.time}</span>
           </div>
           <div style={{fontSize:12,color:"var(--gray)",lineHeight:1.7,marginBottom:6}}>{r.text}</div>
-          <button onClick={()=>setReviews(p=>p.map(rev=>rev.id===r.id?{...rev,helpful:rev.helpful+1}:rev))} style={{background:"none",border:"1px solid var(--border)",borderRadius:8,padding:"3px 9px",fontSize:9,color:"var(--gray)",cursor:"pointer",fontWeight:700}}>👍 Helpful ({r.helpful})</button>
+          <button onClick={()=>{if(voted.has(r.id))return;setVoted(p=>{const n=new Set(p);n.add(r.id);return n;});setReviews(p=>p.map(rev=>rev.id===r.id?{...rev,helpful:rev.helpful+1}:rev));}} style={{background:voted.has(r.id)?"var(--gp)":"none",border:"1.5px solid "+(voted.has(r.id)?"#2D6A4F":"var(--border)"),borderRadius:8,padding:"3px 9px",fontSize:9,color:voted.has(r.id)?"#2D6A4F":"var(--gray)",cursor:voted.has(r.id)?"default":"pointer",fontWeight:700}}>{voted.has(r.id)?"✓ Voted":"👍 Helpful"} ({r.helpful})</button>
         </div>
       ))}
     </div>
@@ -981,6 +982,7 @@ export default function App(){
   const[splashDone,setSplashDone]=useState(false);
   const[dark,setDark]=useState(false);
   const[tab,setTab]=useState("home");
+  const lastTabRef=useRef({id:"",ts:0});
   const[restaurants,setRestaurants]=useState(DEMO_R);
   const[bags,setBags]=useState(DEMO_B);
   const[bookmarks,setBookmarks]=useState(new Set(["b1","b3"]));
@@ -1022,6 +1024,14 @@ export default function App(){
   const[showScrollTop,setShowScrollTop]=useState(false);
 
   useEffect(()=>{
+    const el=scrollRef.current;
+    if(!el)return;
+    const onScroll=()=>setShowScrollTop(el.scrollTop>250);
+    el.addEventListener("scroll",onScroll,{passive:true});
+    return()=>el.removeEventListener("scroll",onScroll);
+  },[tab,splashDone]);
+
+  useEffect(()=>{
     (async()=>{
       try{
         const[{data:r},{data:b}]=await Promise.all([supabase.from("restaurants").select("*"),supabase.from("bags").select("*").eq("is_active",true)]);
@@ -1031,13 +1041,17 @@ export default function App(){
     })();
   },[]);
 
-  // Flash sale every 3 mins
+  // Flash sale: first at 10 s on load, then every 3 mins
   useEffect(()=>{
-    const iv=setInterval(()=>{
-      const pick=DEMO_B.filter(b=>b.quantity>0)[Math.floor(Math.random()*4)];
-      if(pick){setFlashSale(pick);setFlashTimer(600);}
-    },180000);
-    return()=>clearInterval(iv);
+    const trigger=()=>{
+      const avail=DEMO_B.filter(b=>b.quantity>0);
+      if(!avail.length)return;
+      const pick=avail[Math.floor(Math.random()*avail.length)];
+      setFlashSale(pick);setFlashTimer(600);
+    };
+    const t1=setTimeout(trigger,10000);
+    const iv=setInterval(trigger,180000);
+    return()=>{clearTimeout(t1);clearInterval(iv);};
   },[]);
   useEffect(()=>{
     if(!flashSale||flashTimer<=0)return;
@@ -1219,7 +1233,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:${D?"#060d07":"#E
               <span style={{fontWeight:800,fontSize:12,color:"#fff",fontFamily:"system-ui"}}>FLASH SALE · {Math.floor(flashTimer/60)}:{String(flashTimer%60).padStart(2,"0")} left!</span>
               <span style={{fontSize:11,color:"rgba(255,255,255,0.8)",marginLeft:8}}>{enriched.find(b=>b.id===flashSale.id)?.restaurantName||""} · {flashSale.type} · 90% off</span>
             </div>
-            <button onClick={()=>{const eb=enriched.find(b=>b.id===flashSale.id);if(eb){setSelBag(eb);setSelTime(eb.pickup_start);setMode("pickup");}setFlashSale(null);}} style={{background:"#fff",color:"#E23744",border:"none",borderRadius:10,padding:"5px 10px",fontWeight:800,fontSize:11,cursor:"pointer",fontFamily:"system-ui",flexShrink:0}}>Grab!</button>
+            <button onClick={()=>{const eb=enriched.find(b=>b.id===flashSale.id);if(eb&&eb.quantity>0){addToCart(eb,"pickup",eb.pickup_start,"");setTab("home");showToast("🔥 Flash deal grabbed! Check your bag 🛍️");}else{showToast("😔 Sold out already!");}setFlashSale(null);}} style={{background:"#fff",color:"#E23744",border:"none",borderRadius:10,padding:"5px 10px",fontWeight:800,fontSize:11,cursor:"pointer",fontFamily:"system-ui",flexShrink:0}}>Grab!</button>
           </div>
         )}
 
@@ -1406,7 +1420,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:${D?"#060d07":"#E
           {id:"saved",icon:"🔖",label:"Saved"},
           {id:"leaderboard",icon:"🏆",label:"Ranks"},
         ].map(n=>(
-          <div key={n.id} className={`rni${tab===n.id?" on":""}`} onClick={()=>setTab(n.id)}>
+          <div key={n.id} className={`rni${tab===n.id?" on":""}`} onClick={()=>{const now=Date.now();if(n.id==="home"&&tab==="home"&&now-lastTabRef.current.ts<500){scrollRef.current?.scrollTo({top:0,behavior:"smooth"});}lastTabRef.current={id:n.id,ts:now};setTab(n.id);}}>
             <span className="rni-icon">{n.icon}</span>
             <span className="rni-label">{n.label}</span>
           </div>
@@ -1480,8 +1494,26 @@ body{font-family:system-ui,-apple-system,sans-serif;background:${D?"#060d07":"#E
                 ))}
               </div>
               {mode==="delivery"&&<div style={{background:"var(--sh)",borderRadius:13,padding:12,marginBottom:12,border:"1.5px solid var(--border)"}}>
-                <span style={{fontWeight:800,fontSize:11,color:"var(--dark)",display:"block",marginBottom:7}}>📍 Delivery Address</span>
-                <textarea style={{width:"100%",background:"var(--card)",border:"1.5px solid var(--border)",borderRadius:9,padding:"9px 11px",fontSize:13,color:"var(--dark)",outline:"none",resize:"none",fontFamily:"system-ui"}} rows={2} placeholder="Enter your delivery address..." value={addr} onChange={e=>setAddr(e.target.value)}/>
+                <div style={{fontWeight:800,fontSize:11,color:"var(--dark)",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <span>📍 Delivery Address</span>
+                  <span style={{fontSize:9,color:"var(--gray)",fontWeight:500}}>Tap to select</span>
+                </div>
+                {addresses.map((a,i)=>{
+                  const addrVal=a.line1+", "+a.line2;
+                  const isSelected=addr===addrVal;
+                  return(
+                    <div key={i} onClick={()=>setAddr(isSelected?"":addrVal)} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:11,marginBottom:7,background:isSelected?"var(--gp)":"var(--card)",border:"1.5px solid "+(isSelected?"#2D6A4F":"var(--border)"),cursor:"pointer",transition:"all 0.15s"}}>
+                      <div style={{width:32,height:32,borderRadius:9,background:isSelected?"#2D6A4F":"var(--bg)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>{a.icon}</div>
+                      <div style={{flex:1}}>
+                        <div style={{fontWeight:700,fontSize:12,color:"var(--dark)",fontFamily:"system-ui"}}>{a.label}</div>
+                        <div style={{fontSize:10,color:"var(--gray)",marginTop:1}}>{a.line1}, {a.line2}</div>
+                      </div>
+                      {isSelected&&<span style={{fontSize:16,color:"#2D6A4F",fontWeight:700}}>✓</span>}
+                    </div>
+                  );
+                })}
+                <div style={{fontWeight:700,fontSize:10,color:"var(--gray)",textTransform:"uppercase",letterSpacing:0.6,margin:"8px 0 5px"}}>+ Different address</div>
+                <textarea style={{width:"100%",background:"var(--card)",border:"1.5px solid var(--border)",borderRadius:9,padding:"9px 11px",fontSize:12,color:"var(--dark)",outline:"none",resize:"none",fontFamily:"system-ui"}} rows={2} placeholder="Enter another address..." value={addresses.some(a=>addr===a.line1+', '+a.line2)?'':addr} onChange={e=>setAddr(e.target.value)}/>
               </div>}
               <div style={{display:"flex",gap:6,marginBottom:12}}>
                 {[["📦","Left",selBag.quantity||"None"],["💰","Saving",d+"%"],["🌱","CO2",CO2_PER_BAG+"kg"],["💜","Points","+100"]].map(([ic,lb,val])=>(

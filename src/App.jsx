@@ -984,8 +984,6 @@ export default function App(){
   const[tab,setTab]=useState("home");
   const lastTabRef=useRef({id:"",ts:0});
   const[checkedIn,setCheckedIn]=useState(false);
-  const[checkedIn,setCheckedIn]=useState(false);
-  const[liveWeather]=useState({icon:"🌤️",feel:"Pleasant evening — 22C",tip:"Great for a pickup run!"});
   const[restaurants,setRestaurants]=useState(DEMO_R);
   const[bags,setBags]=useState(DEMO_B);
   const[bookmarks,setBookmarks]=useState(new Set(["b1","b3"]));

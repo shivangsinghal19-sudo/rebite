@@ -71,7 +71,7 @@ function Splash({onDone}){
       <div style={{textAlign:"center",opacity:ph===0?0:1,transform:ph===0?"scale(0.7)":"scale(1)",transition:"all 0.5s cubic-bezier(0.34,1.56,0.64,1)"}}>
         <div style={{width:90,height:90,borderRadius:24,background:"linear-gradient(135deg,#F9C74F,#F4845F)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:48,margin:"0 auto 16px",boxShadow:"0 0 80px rgba(249,199,79,0.5)"}}>♻️</div>
         <div style={{fontSize:44,fontWeight:800,color:"#fff",fontFamily:"system-ui,sans-serif",letterSpacing:-2}}>Re<span style={{color:"#52B788"}}>Bite</span></div>
-        <div style={{fontSize:12,color:"rgba(255,255,255,0.4)",letterSpacing:3,marginTop:8,opacity:ph>=1?1:0,transition:"opacity 0.4s 0.4s",fontFamily:"system-ui"}}>SAVE FOOD · SAVE MONEY</div>
+        <div style={{fontSize:12,color:"rgba(255,255,255,0.4)",letterSpacing:3,marginTop:8,opacity:ph>=1?1:0,transition:"opacity 0.4s 0.4s",fontFamily:"system-ui"}}>SAVE FOOD · SAVE DELHI</div>
       </div>
     </div>
   );
@@ -402,7 +402,14 @@ function NutritionPage({orders}){
 function YouPage({orders,streak,dark,setDark,showToast,notifPerm,onEnableNotif,addresses,activeAddr,setActiveAddr,setAddresses}){
   const[sub,setSub]=useState("home");
   const tBags=orders.length;
-  const tSavings=orders.reduce((s,o)=>s+o.savings,0);
+  useEffect(()=>{
+    const el=scrollRef.current;if(!el)return;
+    const fn=()=>setShowScrollTop(el.scrollTop>300);
+    el.addEventListener("scroll",fn,{passive:true});
+    return()=>el.removeEventListener("scroll",fn);
+  },[tab]);
+
+    const tSavings=orders.reduce((s,o)=>s+o.savings,0);
   const tCO2=(orders.length*CO2_PER_BAG).toFixed(1);
   const points=tBags*100+Math.floor(tSavings/10)*5;
   const level=points<500?"Sprout 🌱":points<1500?"Saver 🌿":points<3000?"Hero 🌳":"Legend 🏆";
@@ -752,6 +759,203 @@ function LiveTracker({order,step,onDismiss}){
   );
 }
 
+
+/* ════════════════════════════════
+   FEATURE: Group Order Mode
+════════════════════════════════ */
+function GroupOrderModal({bag,onClose,toast}){
+  const[link]=useState("rebite.app/g/"+Math.random().toString(36).slice(2,8).toUpperCase());
+  const[members]=useState([{name:"You",avatar:"🧑",paid:true},{name:"Priya",avatar:"👩",paid:false},{name:"Rahul",avatar:"👨",paid:false}]);
+  const[copied,setCopied]=useState(false);
+  function copyLink(){navigator.clipboard?.writeText("https://"+link);setCopied(true);toast("🔗 Group link copied!");setTimeout(()=>setCopied(false),2000);}
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:900,display:"flex",alignItems:"flex-end"}} onClick={onClose}>
+      <div style={{background:"rgba(0,0,0,0.55)",position:"absolute",inset:0,backdropFilter:"blur(4px)"}}/>
+      <div style={{background:"var(--card)",borderRadius:"24px 24px 0 0",padding:"20px 16px 36px",width:"100%",maxWidth:430,position:"relative",zIndex:1,margin:"0 auto"}} onClick={e=>e.stopPropagation()}>
+        <div style={{width:36,height:4,background:"var(--border)",borderRadius:4,margin:"0 auto 16px"}}/>
+        <div style={{fontWeight:800,fontSize:18,color:"var(--dark)",fontFamily:"system-ui",marginBottom:4}}>👥 Group Order</div>
+        <div style={{fontSize:12,color:"var(--gray)",marginBottom:16}}>Split a bag with friends — each pays their share</div>
+        <div style={{background:"var(--gp)",borderRadius:14,padding:"12px 14px",marginBottom:14,border:"1px solid rgba(45,106,79,0.2)"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{fontWeight:700,fontSize:13,color:"var(--dark)"}}>{bag?.restaurantName}</div>
+            <span style={{fontWeight:800,fontSize:14,color:"#2D6A4F",fontFamily:"system-ui"}}>₹{bag?.price}</span>
+          </div>
+          <div style={{fontSize:11,color:"var(--gray)",marginTop:2}}>{bag?.type} bag · Split 3 ways = ₹{Math.ceil((bag?.price||0)/3)}/person</div>
+        </div>
+        <div style={{marginBottom:14}}>
+          {members.map((m,i)=>(
+            <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 0",borderBottom:"1px solid var(--border)"}}>
+              <div style={{width:34,height:34,borderRadius:"50%",background:"var(--bg)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>{m.avatar}</div>
+              <div style={{flex:1}}><span style={{fontWeight:700,fontSize:13,color:"var(--dark)"}}>{m.name}</span>{i===0&&<span style={{fontSize:9,color:"var(--gray)"}}> (you)</span>}</div>
+              <div style={{fontSize:10,fontWeight:800,padding:"3px 10px",borderRadius:20,background:m.paid?"#DCFCE7":"#FEF2F2",color:m.paid?"#16A34A":"#E23744"}}>{m.paid?"Paid":"Pending"}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{background:"var(--bg)",borderRadius:12,padding:"10px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:10}}>
+          <div style={{flex:1,fontSize:11,color:"var(--gray)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{link}</div>
+          <button onClick={copyLink} style={{background:"#2D6A4F",color:"#fff",border:"none",borderRadius:9,padding:"7px 13px",fontWeight:700,fontSize:11,cursor:"pointer",flexShrink:0,fontFamily:"system-ui"}}>{copied?"Copied!":"Copy"}</button>
+        </div>
+        <button onClick={onClose} style={{width:"100%",background:"#E23744",color:"#fff",border:"none",borderRadius:14,padding:13,fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"system-ui"}}>🚀 Launch Group Order</button>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════
+   FEATURE: AI Chef suggestions
+════════════════════════════════ */
+function AIChefModal({bag,onClose}){
+  const[loading,setLoading]=useState(true);
+  const[recipes,setRecipes]=useState([]);
+  const items={Bakery:"croissants, bread, pastries",Meal:"dal, sabzi, rice, roti",Dessert:"cake, mithai, cookies",Cafe:"sandwich, muffin, coffee",Fine_Dining:"starter, main course",Buffet:"mixed veg, paneer, rice"}[bag?.type?.replace(" ","_")]||"assorted food";
+  const mock=[
+    {name:"French Toast Twist",time:"15 min",emoji:"🍞",steps:["Dip bread in egg+milk","Pan-fry golden","Drizzle honey & serve"]},
+    {name:"Leftover Khichdi Bowl",time:"20 min",emoji:"🍚",steps:["Mix rice & dal together","Jeera tadka on top","Add pickle & ghee"]},
+    {name:"Stuffed Paratha Roll",time:"25 min",emoji:"🫓",steps:["Mash leftover sabzi","Stuff into roti","Pan-fry with butter"]},
+  ];
+  useState(()=>{const t=setTimeout(()=>{setRecipes(mock);setLoading(false);},1800);return()=>clearTimeout(t);});
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:900,display:"flex",alignItems:"flex-end"}} onClick={onClose}>
+      <div style={{background:"rgba(0,0,0,0.55)",position:"absolute",inset:0,backdropFilter:"blur(4px)"}}/>
+      <div style={{background:"var(--card)",borderRadius:"24px 24px 0 0",padding:"20px 16px 36px",width:"100%",maxWidth:430,position:"relative",zIndex:1,margin:"0 auto",maxHeight:"80vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+        <div style={{width:36,height:4,background:"var(--border)",borderRadius:4,margin:"0 auto 16px"}}/>
+        <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:10}}>
+          <div style={{width:42,height:42,borderRadius:13,background:"linear-gradient(135deg,#F9C74F,#F4845F)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>🤖</div>
+          <div><div style={{fontWeight:800,fontSize:17,color:"var(--dark)",fontFamily:"system-ui"}}>AI Chef</div><div style={{fontSize:11,color:"var(--gray)"}}>Based on your {bag?.type} bag</div></div>
+        </div>
+        <div style={{background:"var(--gp)",borderRadius:11,padding:"8px 12px",marginBottom:14,border:"1px solid rgba(45,106,79,0.15)"}}>
+          <span style={{fontSize:11,color:"#2D6A4F",fontWeight:700}}>📦 Bag contents: </span><span style={{fontSize:11,color:"var(--gray)"}}>{items}</span>
+        </div>
+        {loading?(
+          <div style={{textAlign:"center",padding:"30px 0"}}>
+            <div style={{fontSize:40,marginBottom:10,display:"inline-block",animation:"spinY 1.2s linear infinite"}}>🤖</div>
+            <div style={{fontSize:13,color:"var(--gray)",fontWeight:700}}>Cooking up ideas...</div>
+          </div>
+        ):recipes.map((r,i)=>(
+          <div key={i} style={{background:"var(--card)",borderRadius:14,padding:13,marginBottom:10,border:"1px solid var(--border)"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+              <div style={{fontSize:26}}>{r.emoji}</div>
+              <div><div style={{fontWeight:800,fontSize:14,color:"var(--dark)",fontFamily:"system-ui"}}>{r.name}</div><div style={{fontSize:10,color:"var(--gray)"}}>{r.time}</div></div>
+            </div>
+            {r.steps.map((s,j)=>(
+              <div key={j} style={{display:"flex",gap:8,marginBottom:5,alignItems:"flex-start"}}>
+                <div style={{width:17,height:17,borderRadius:"50%",background:"#2D6A4F",color:"#fff",fontSize:8,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:2}}>{j+1}</div>
+                <div style={{fontSize:12,color:"var(--gray)",lineHeight:1.5}}>{s}</div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════
+   FEATURE: Delhi Leaderboard
+════════════════════════════════ */
+function LeaderboardPage({orders,streak}){
+  const myScore=orders.length*100+streak*50;
+  const board=[
+    {name:"Aditi K.",area:"Hauz Khas",score:2840,bags:28,isYou:false},
+    {name:"Vikram S.",area:"CP",score:2210,bags:22,isYou:false},
+    {name:"Meera P.",area:"GK",score:1950,bags:19,isYou:false},
+    {name:"You",area:"Saket",score:myScore,bags:orders.length,isYou:true},
+    {name:"Rohan T.",area:"Rajouri",score:890,bags:9,isYou:false},
+    {name:"Sneha M.",area:"Saket",score:750,bags:7,isYou:false},
+  ].sort((a,b)=>b.score-a.score).map((e,i)=>({...e,rank:i+1}));
+  const myRank=board.find(b=>b.isYou)?.rank||4;
+  const medal=i=>i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
+  return(
+    <div style={{padding:"16px 14px",animation:"fu 0.3s ease"}}>
+      <div style={{fontWeight:800,fontSize:20,marginBottom:4,color:"var(--dark)",fontFamily:"system-ui"}}>Delhi Leaderboard 🏆</div>
+      <div style={{fontSize:12,color:"var(--gray)",marginBottom:14}}>Top food savers this week</div>
+      <div style={{background:"linear-gradient(135deg,#7C3AED,#4C1D95)",borderRadius:18,padding:16,marginBottom:14,display:"flex",gap:14,alignItems:"center"}}>
+        <div style={{width:52,height:52,borderRadius:16,background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>🧑</div>
+        <div style={{flex:1}}>
+          <div style={{fontWeight:800,fontSize:15,color:"#fff",fontFamily:"system-ui"}}>Your Rank: #{myRank}</div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,0.7)",marginTop:2}}>{myScore} pts · {orders.length} bags</div>
+        </div>
+        <div style={{textAlign:"right"}}>
+          <div style={{fontSize:9,color:"rgba(255,255,255,0.5)"}}>to climb next</div>
+          <div style={{fontWeight:800,fontSize:18,color:"#F9C74F",fontFamily:"system-ui"}}>{Math.max(0,(board[myRank-2]?.score||0)-myScore)} pts</div>
+        </div>
+      </div>
+      {board.map((p,i)=>(
+        <div key={i} style={{background:p.isYou?"var(--gp)":"var(--card)",borderRadius:14,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:12,border:p.isYou?"1.5px solid #2D6A4F":"1px solid var(--border)"}}>
+          <div style={{width:30,height:30,borderRadius:10,background:i<3?"linear-gradient(135deg,#F9C74F,#F4845F)":"var(--bg)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:i<3?18:12,fontWeight:700,color:i<3?"":"var(--gray)",flexShrink:0}}>{i<3?medal(i):p.rank}</div>
+          <div style={{flex:1}}>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <span style={{fontWeight:800,fontSize:14,color:"var(--dark)",fontFamily:"system-ui"}}>{p.name}</span>
+              {p.isYou&&<span style={{fontSize:8,background:"#2D6A4F",color:"#fff",borderRadius:8,padding:"2px 6px",fontWeight:700}}>YOU</span>}
+            </div>
+            <div style={{fontSize:10,color:"var(--gray)",marginTop:1}}>{p.area} · {p.bags} bags</div>
+          </div>
+          <div style={{fontWeight:800,fontSize:16,color:p.isYou?"#2D6A4F":"var(--dark)",fontFamily:"system-ui"}}>{p.score}<span style={{fontSize:9,fontWeight:400,color:"var(--gray)"}}>pts</span></div>
+        </div>
+      ))}
+      <div style={{textAlign:"center",padding:"10px 0 4px",fontSize:11,color:"var(--gray)"}}>Resets every Monday 🗓</div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════
+   FEATURE: ReBite for Offices (B2B)
+════════════════════════════════ */
+function OfficesPage({onClose,toast}){
+  const[done,setDone]=useState(false);
+  const[form,setForm]=useState({company:"",size:"",email:""});
+  const plans=[
+    {name:"Starter",price:"₹4,999/mo",bags:20,color:"#2D6A4F",perks:["20 bags/month","2 locations","WhatsApp alerts"]},
+    {name:"Growth",price:"₹9,999/mo",bags:50,color:"#7C3AED",perks:["50 bags/month","5 locations","Priority picks","ESG report"]},
+    {name:"Enterprise",price:"Custom",bags:"∞",color:"#E23744",perks:["Unlimited bags","All Delhi offices","Account manager","Carbon credits"]},
+  ];
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:800,background:"var(--bg)",overflowY:"auto"}}>
+      <div style={{background:"linear-gradient(135deg,#1B4332,#2D6A4F)",padding:"14px 14px 22px"}}>
+        <button onClick={onClose} style={{background:"rgba(255,255,255,0.18)",border:"none",borderRadius:10,padding:"6px 12px",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:12,fontFamily:"system-ui"}}>← Back</button>
+        <div style={{fontWeight:800,fontSize:22,color:"#fff",fontFamily:"system-ui"}}>ReBite for Offices 🏢</div>
+        <div style={{fontSize:13,color:"rgba(255,255,255,0.7)",marginTop:4}}>Feed your team. Save food. Earn ESG credits.</div>
+      </div>
+      <div style={{padding:14}}>
+        {plans.map(p=>(
+          <div key={p.name} style={{background:"var(--card)",borderRadius:16,padding:15,marginBottom:10,border:`2px solid ${p.color}22`,position:"relative",overflow:"hidden"}}>
+            <div style={{position:"absolute",width:60,height:60,background:p.color,borderRadius:"50%",top:-20,right:-10,opacity:0.08}}/>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+              <div><div style={{fontWeight:800,fontSize:15,color:"var(--dark)",fontFamily:"system-ui"}}>{p.name}</div><div style={{fontWeight:800,fontSize:18,color:p.color,fontFamily:"system-ui"}}>{p.price}</div></div>
+              <div style={{textAlign:"right"}}><div style={{fontSize:22,fontWeight:800,color:p.color,fontFamily:"system-ui"}}>{p.bags}</div><div style={{fontSize:9,color:"var(--gray)"}}>bags/mo</div></div>
+            </div>
+            {p.perks.map(pk=>(
+              <div key={pk} style={{display:"flex",gap:7,alignItems:"center",marginBottom:4}}>
+                <div style={{width:14,height:14,borderRadius:"50%",background:p.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,color:"#fff",flexShrink:0}}>✓</div>
+                <span style={{fontSize:11,color:"var(--gray)"}}>{pk}</span>
+              </div>
+            ))}
+          </div>
+        ))}
+        {done?(
+          <div style={{textAlign:"center",padding:"28px 16px",background:"var(--card)",borderRadius:18,border:"1px solid var(--border)"}}>
+            <div style={{fontSize:48,marginBottom:12}}>🎉</div>
+            <div style={{fontWeight:800,fontSize:16,color:"var(--dark)",fontFamily:"system-ui"}}>We'll be in touch!</div>
+            <div style={{fontSize:12,color:"var(--gray)",marginTop:6}}>Our team will reach out within 24 hours</div>
+          </div>
+        ):(
+          <div style={{background:"var(--card)",borderRadius:16,padding:16,border:"1px solid var(--border)"}}>
+            <div style={{fontWeight:800,fontSize:14,color:"var(--dark)",marginBottom:12,fontFamily:"system-ui"}}>Request a Demo</div>
+            <input value={form.company} onChange={e=>setForm(p=>({...p,company:e.target.value}))} style={{width:"100%",border:"1.5px solid var(--border)",borderRadius:12,padding:"11px 13px",fontSize:13,color:"var(--dark)",background:"var(--bg)",outline:"none",marginBottom:8,fontFamily:"system-ui"}} placeholder="Company name"/>
+            <input value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))} type="email" style={{width:"100%",border:"1.5px solid var(--border)",borderRadius:12,padding:"11px 13px",fontSize:13,color:"var(--dark)",background:"var(--bg)",outline:"none",marginBottom:8,fontFamily:"system-ui"}} placeholder="Work email"/>
+            <select value={form.size} onChange={e=>setForm(p=>({...p,size:e.target.value}))} style={{width:"100%",border:"1.5px solid var(--border)",borderRadius:12,padding:"11px 13px",fontSize:13,color:"var(--dark)",background:"var(--bg)",outline:"none",marginBottom:12,fontFamily:"system-ui"}}>
+              <option value="">Team size</option>
+              {["1-10","11-50","51-200","200+"].map(s=><option key={s}>{s} employees</option>)}
+            </select>
+            <button onClick={()=>{if(!form.company||!form.email)return;setDone(true);toast("🏢 Demo requested! We'll call soon");}} style={{width:"100%",background:"#2D6A4F",color:"#fff",border:"none",borderRadius:13,padding:14,fontWeight:800,fontSize:14,cursor:"pointer",fontFamily:"system-ui"}}>Request Demo →</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
 /* ── SavedCard (extracted to avoid hook-in-map) ── */
 function SavedCard({bag,onRemove,onOpen}){
   const{t,u}=useCountdown(bag.pickup_end);
@@ -785,7 +989,7 @@ export default function App(){
   const[tab,setTab]=useState("home");
   const[restaurants,setRestaurants]=useState(DEMO_R);
   const[bags,setBags]=useState(DEMO_B);
-  const[bookmarks,setBookmarks]=useState(new Set(["The Pastry House","Sweet Escape"]));
+  const[bookmarks,setBookmarks]=useState(new Set(["b1","b3"]));
   const[orders,setOrders]=useState([]);
   const[streak,setStreak]=useState(3);
   const[cart,setCart]=useState([]);
@@ -811,12 +1015,17 @@ export default function App(){
   const[showAddrPicker,setShowAddrPicker]=useState(false);
   const[liveOrder,setLiveOrder]=useState(null);
   const[liveStep,setLiveStep]=useState(0);
+  const[showGroup,setShowGroup]=useState(false);
+  const[showAIChef,setShowAIChef]=useState(false);
+  const[showOffices,setShowOffices]=useState(false);
   const[addresses,setAddresses]=useState([
     {id:1,label:"Home",icon:"🏠",line1:"B-42, Vasant Kunj",line2:"New Delhi - 110070",isDefault:true},
     {id:2,label:"Work",icon:"🏢",line1:"Connaught Place, Block A",line2:"New Delhi - 110001",isDefault:false},
   ]);
   const[activeAddr,setActiveAddr]=useState(0);
   const ddRef=useRef(null);
+  const scrollRef=useRef(null);
+  const[showScrollTop,setShowScrollTop]=useState(false);
 
   useEffect(()=>{
     (async()=>{
@@ -843,9 +1052,7 @@ export default function App(){
   },[flashSale]);
 
   const showToast=m=>{setToast(m);setToastK(k=>k+1);setTimeout(()=>setToast(null),2400);};
-  const toggleBm=name=>{setBookmarks(p=>{const n=new Set(p);if(n.has(name)){n.delete(name);showToast("🔖 Removed");}else{n.add(name);showToast("🔖 Saved!");}return n;});};
-
-  async function handleNotif(){
+  const toggleBm=bagId=>{setBookmarks(p=>{const n=new Set(p);if(n.has(bagId)){n.delete(bagId);showToast("🔖 Removed");}else{n.add(bagId);showToast("🔖 Saved!");}return n;});};
     if(typeof Notification==="undefined")return;
     const p=await Notification.requestPermission();
     setNotifPerm(p);
@@ -918,7 +1125,14 @@ export default function App(){
     setTimeout(()=>setLiveOrder(null),12000);
   }
 
-  const tSavings=orders.reduce((s,o)=>s+o.savings,0);
+  useEffect(()=>{
+    const el=scrollRef.current;if(!el)return;
+    const fn=()=>setShowScrollTop(el.scrollTop>300);
+    el.addEventListener("scroll",fn,{passive:true});
+    return()=>el.removeEventListener("scroll",fn);
+  },[tab]);
+
+    const tSavings=orders.reduce((s,o)=>s+o.savings,0);
   const tCO2=(orders.length*CO2_PER_BAG).toFixed(1);
 
   if(!splashDone)return(
@@ -1013,7 +1227,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:${D?"#060d07":"#E
             <span style={{fontSize:16}}>⚡</span>
             <div style={{flex:1}}>
               <span style={{fontWeight:800,fontSize:12,color:"#fff",fontFamily:"system-ui"}}>FLASH SALE · {Math.floor(flashTimer/60)}:{String(flashTimer%60).padStart(2,"0")} left!</span>
-              <span style={{fontSize:11,color:"rgba(255,255,255,0.8)",marginLeft:8}}>{flashSale.type} bag 90% off</span>
+              <span style={{fontSize:11,color:"rgba(255,255,255,0.8)",marginLeft:8}}>{enriched.find(b=>b.id===flashSale.id)?.restaurantName||""} · {flashSale.type} · 90% off</span>
             </div>
             <button onClick={()=>{const eb=enriched.find(b=>b.id===flashSale.id);if(eb){setSelBag(eb);setSelTime(eb.pickup_start);setMode("pickup");}setFlashSale(null);}} style={{background:"#fff",color:"#E23744",border:"none",borderRadius:10,padding:"5px 10px",fontWeight:800,fontSize:11,cursor:"pointer",fontFamily:"system-ui",flexShrink:0}}>Grab!</button>
           </div>
@@ -1055,7 +1269,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:${D?"#060d07":"#E
       )}
 
       {/* SCROLL BODY */}
-      <div className="rscroll">
+      <div className="rscroll" ref={scrollRef}>
 
         {/* HOME */}
         {tab==="home"&&<>
@@ -1084,6 +1298,13 @@ body{font-family:system-ui,-apple-system,sans-serif;background:${D?"#060d07":"#E
             <div style={{fontSize:20}}>🤝</div>
             <div style={{flex:1}}><div style={{fontWeight:800,fontSize:12,color:"#fff",fontFamily:"system-ui"}}>Refer a friend, earn ₹50!</div><div style={{fontSize:10,color:"rgba(255,255,255,0.7)"}}>Share ReBite and get rewarded</div></div>
             <span style={{color:"rgba(255,255,255,0.5)",fontSize:16}}>›</span>
+          </div>
+
+          {/* B2B Offices Banner */}
+          <div onClick={()=>setShowOffices(true)} style={{margin:"0 14px 8px",background:"linear-gradient(135deg,#1a1a2e,#16213e)",borderRadius:14,padding:"11px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}>
+            <div style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>&#x1F3E2;</div>
+            <div style={{flex:1}}><div style={{fontWeight:800,fontSize:12,color:"#fff",fontFamily:"system-ui"}}>ReBite for Offices</div><div style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>Feed your team · ESG credits · From ₹4,999/mo</div></div>
+            <span style={{color:"rgba(255,255,255,0.4)",fontSize:16}}>›</span>
           </div>
 
           {/* Cart savings */}
@@ -1138,8 +1359,8 @@ body{font-family:system-ui,-apple-system,sans-serif;background:${D?"#060d07":"#E
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,padding:"0 14px"}}>
               {filtered.map(bag=>(
                 <BagCard key={bag.id} bag={bag}
-                  bookmarked={bookmarks.has(bag.restaurantName)}
-                  onBm={()=>toggleBm(bag.restaurantName)}
+                  bookmarked={bookmarks.has(bag.id)}
+                  onBm={()=>toggleBm(bag.id)}
                   onAdd={()=>addToCart(bag,"pickup",bag.pickup_start,"")}
                   onOpen={()=>{
                     if(bag.quantity===0){setWaitBag(bag);return;}
@@ -1154,25 +1375,29 @@ body{font-family:system-ui,-apple-system,sans-serif;background:${D?"#060d07":"#E
 
         {tab==="map"&&<MapPage bags={bags} enriched={enriched} onAreaSelect={a=>{setAreaFilter(a);setTab("home");}}/>}
         {tab==="nutrition"&&<NutritionPage orders={orders}/>}
+        {tab==="leaderboard"&&<LeaderboardPage orders={orders} streak={streak}/>}
         {tab==="you"&&<YouPage orders={orders} streak={streak} dark={dark} setDark={setDark} showToast={showToast} notifPerm={notifPerm} onEnableNotif={handleNotif} addresses={addresses} activeAddr={activeAddr} setActiveAddr={setActiveAddr} setAddresses={setAddresses}/>}
 
         {/* SAVED — inline */}
         {tab==="saved"&&<div style={{padding:"16px 14px",animation:"fu 0.3s ease"}}>
           <div style={{fontWeight:800,fontSize:20,marginBottom:4,color:"var(--dark)",fontFamily:"system-ui"}}>Saved Places 🔖</div>
-          <div style={{fontSize:12,color:"var(--gray)",marginBottom:16}}>{bookmarks.size} saved</div>
-          {enriched.filter(b=>bookmarks.has(b.restaurantName)).length===0?(
+          <div style={{fontSize:12,color:"var(--gray)",marginBottom:16}}>{enriched.filter(b=>bookmarks.has(b.id)).length} saved</div>
+          {enriched.filter(b=>bookmarks.has(b.id)).length===0?(
             <div style={{textAlign:"center",padding:"50px 16px",color:"var(--gray)"}}>
               <div style={{fontSize:48,marginBottom:12}}>🔖</div>
               <div style={{fontWeight:700,fontSize:15,color:"var(--dark)",fontFamily:"system-ui",marginBottom:6}}>Nothing saved yet</div>
               <div style={{fontSize:12}}>Tap ♡ on any card to save it</div>
             </div>
-          ):enriched.filter(b=>bookmarks.has(b.restaurantName)).map(bag=>(
-            <SavedCard key={bag.id} bag={bag} onRemove={()=>toggleBm(bag.restaurantName)} onOpen={()=>{if(bag.quantity===0){setWaitBag(bag);return;}setSelBag(bag);setSelTime(bag.pickup_start||"18:00");setMode("pickup");setAddr("");}}/>
+          ):enriched.filter(b=>bookmarks.has(b.id)).map(bag=>(
+            <SavedCard key={bag.id} bag={bag} onRemove={()=>toggleBm(bag.id)} onOpen={()=>{if(bag.quantity===0){setWaitBag(bag);return;}setSelBag(bag);setSelTime(bag.pickup_start||"18:00");setMode("pickup");setAddr("");}}/>
           ))}
         </div>}
       </div>
 
-      {/* FAB */}
+      {showScrollTop&&(
+        <button onClick={()=>scrollRef.current?.scrollTo({top:0,behavior:"smooth"})} style={{position:"absolute",bottom:cart.length>0?136:82,right:14,zIndex:95,width:42,height:42,borderRadius:"50%",background:"var(--card)",border:"1.5px solid var(--border)",cursor:"pointer",fontSize:20,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 16px rgba(0,0,0,0.12)",color:"var(--dark)",fontWeight:700}}>&#8679;</button>
+      )}
+            {/* FAB */}
       {cart.length>0&&(
         <div className="rfab">
           <button className="rfab-btn" onClick={()=>setShowCart(true)}>
@@ -1189,6 +1414,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:${D?"#060d07":"#E
           {id:"map",icon:"🗺️",label:"Map"},
           {id:"nutrition",icon:"📊",label:"Nutrition"},
           {id:"saved",icon:"🔖",label:"Saved"},
+          {id:"leaderboard",icon:"🏆",label:"Ranks"},
         ].map(n=>(
           <div key={n.id} className={`rni${tab===n.id?" on":""}`} onClick={()=>setTab(n.id)}>
             <span className="rni-icon">{n.icon}</span>
@@ -1235,14 +1461,14 @@ body{font-family:system-ui,-apple-system,sans-serif;background:${D?"#060d07":"#E
 
       {/* DETAIL VIEW */}
       {selBag&&(()=>{
-        const d=getDisc(selBag);const slots=gSlots(selBag.pickup_start,selBag.pickup_end);const bm=bookmarks.has(selBag.restaurantName);
+        const d=getDisc(selBag);const slots=gSlots(selBag.pickup_start,selBag.pickup_end);const bm=bookmarks.has(selBag.id);
         return(
           <div className="detail">
             <div style={{height:220,position:"relative",overflow:"hidden"}}>
               <img src={getDImg(selBag)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
               <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,0.3),transparent 60%)"}}/>
               <button onClick={()=>setSelBag(null)} style={{position:"absolute",top:14,left:14,background:"#fff",border:"none",borderRadius:12,width:40,height:40,cursor:"pointer",fontSize:18,boxShadow:"0 2px 10px rgba(0,0,0,0.15)",display:"flex",alignItems:"center",justifyContent:"center",color:"#333"}}>←</button>
-              <button onClick={()=>toggleBm(selBag.restaurantName)} style={{position:"absolute",top:14,right:14,background:"rgba(0,0,0,0.4)",border:"none",borderRadius:"50%",width:40,height:40,cursor:"pointer",fontSize:20,display:"flex",alignItems:"center",justifyContent:"center",color:bm?"#EF4444":"rgba(255,255,255,0.8)",backdropFilter:"blur(4px)"}}>{bm?"♥":"♡"}</button>
+              <button onClick={()=>toggleBm(selBag.id)} style={{position:"absolute",top:14,right:14,background:"rgba(0,0,0,0.4)",border:"none",borderRadius:"50%",width:40,height:40,cursor:"pointer",fontSize:20,display:"flex",alignItems:"center",justifyContent:"center",color:bm?"#EF4444":"rgba(255,255,255,0.8)",backdropFilter:"blur(4px)"}}>{bm?"♥":"♡"}</button>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"var(--card)",borderBottom:"1px solid var(--border)"}}>
               <img src={getRImg(selBag)} style={{width:46,height:46,borderRadius:11,objectFit:"cover",flexShrink:0}} alt=""/>
@@ -1254,6 +1480,10 @@ body{font-family:system-ui,-apple-system,sans-serif;background:${D?"#060d07":"#E
             <div style={{padding:14}}>
               <div style={{fontWeight:800,fontSize:20,marginBottom:4,color:"var(--dark)",fontFamily:"system-ui"}}>{selBag.type} Surprise Bag</div>
               <div style={{fontSize:11,color:"var(--gray)",marginBottom:12}}>{isVeg(selBag)?"🌿 Veg":"🍗 Non-Veg"} · {d}% off · saves ₹{Number(selBag.original_price)-Number(selBag.price)}</div>
+              <div style={{display:"flex",gap:8,marginBottom:10}}>
+                <button onClick={()=>setShowGroup(true)} style={{flex:1,background:"rgba(249,199,79,0.1)",border:"1.5px solid #F9C74F",borderRadius:12,padding:"9px 4px",fontWeight:700,fontSize:11,cursor:"pointer",color:"var(--dark)",fontFamily:"system-ui"}}>&#x1F465; Group</button>
+                <button onClick={()=>setShowAIChef(true)} style={{flex:1,background:"rgba(124,58,237,0.1)",border:"1.5px solid #7C3AED",borderRadius:12,padding:"9px 4px",fontWeight:700,fontSize:11,cursor:"pointer",color:"var(--dark)",fontFamily:"system-ui"}}>&#x1F916; AI Chef</button>
+              </div>
               <div style={{display:"flex",background:"var(--bg)",borderRadius:12,padding:3,marginBottom:12}}>
                 {[["pickup","🏃 Pickup"],["delivery","🛵 Delivery +₹20"]].map(([m,l])=>(
                   <button key={m} onClick={()=>setMode(m)} style={{flex:1,padding:"9px 6px",border:"none",borderRadius:10,fontWeight:700,fontSize:11,cursor:"pointer",background:mode===m?"var(--card)":"transparent",color:mode===m?"#2D6A4F":"var(--gray)",transition:"all 0.15s",fontFamily:"system-ui"}}>{l}</button>
@@ -1320,6 +1550,9 @@ body{font-family:system-ui,-apple-system,sans-serif;background:${D?"#060d07":"#E
         onOrder={(bag)=>{addToCart({...bag,price:49},"pickup",bag.pickup_start,"");}}/>}
 
       {/* TOAST */}
+      {showGroup&&selBag&&<GroupOrderModal bag={selBag} onClose={()=>setShowGroup(false)} toast={showToast}/>}
+      {showAIChef&&selBag&&<AIChefModal bag={selBag} onClose={()=>setShowAIChef(false)}/>}
+      {showOffices&&<OfficesPage onClose={()=>setShowOffices(false)} toast={showToast}/>}
       {/* LIVE ORDER TRACKER */}
       {liveOrder&&<LiveTracker order={liveOrder} step={liveStep} onDismiss={()=>setLiveOrder(null)}/>}
 

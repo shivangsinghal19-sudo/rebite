@@ -402,14 +402,8 @@ function NutritionPage({orders}){
 function YouPage({orders,streak,dark,setDark,showToast,notifPerm,onEnableNotif,addresses,activeAddr,setActiveAddr,setAddresses}){
   const[sub,setSub]=useState("home");
   const tBags=orders.length;
-  useEffect(()=>{
-    const el=scrollRef.current;if(!el)return;
-    const fn=()=>setShowScrollTop(el.scrollTop>300);
-    el.addEventListener("scroll",fn,{passive:true});
-    return()=>el.removeEventListener("scroll",fn);
-  },[tab]);
 
-    const tSavings=orders.reduce((s,o)=>s+o.savings,0);
+  const tSavings=orders.reduce((s,o)=>s+o.savings,0);
   const tCO2=(orders.length*CO2_PER_BAG).toFixed(1);
   const points=tBags*100+Math.floor(tSavings/10)*5;
   const level=points<500?"Sprout 🌱":points<1500?"Saver 🌿":points<3000?"Hero 🌳":"Legend 🏆";
@@ -1053,6 +1047,8 @@ export default function App(){
 
   const showToast=m=>{setToast(m);setToastK(k=>k+1);setTimeout(()=>setToast(null),2400);};
   const toggleBm=bagId=>{setBookmarks(p=>{const n=new Set(p);if(n.has(bagId)){n.delete(bagId);showToast("🔖 Removed");}else{n.add(bagId);showToast("🔖 Saved!");}return n;});};
+
+  async function handleNotif(){
     if(typeof Notification==="undefined")return;
     const p=await Notification.requestPermission();
     setNotifPerm(p);
@@ -1125,14 +1121,8 @@ export default function App(){
     setTimeout(()=>setLiveOrder(null),12000);
   }
 
-  useEffect(()=>{
-    const el=scrollRef.current;if(!el)return;
-    const fn=()=>setShowScrollTop(el.scrollTop>300);
-    el.addEventListener("scroll",fn,{passive:true});
-    return()=>el.removeEventListener("scroll",fn);
-  },[tab]);
 
-    const tSavings=orders.reduce((s,o)=>s+o.savings,0);
+  const tSavings=orders.reduce((s,o)=>s+o.savings,0);
   const tCO2=(orders.length*CO2_PER_BAG).toFixed(1);
 
   if(!splashDone)return(

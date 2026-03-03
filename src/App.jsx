@@ -983,6 +983,9 @@ export default function App(){
   const[dark,setDark]=useState(false);
   const[tab,setTab]=useState("home");
   const lastTabRef=useRef({id:"",ts:0});
+  const[checkedIn,setCheckedIn]=useState(false);
+  const[checkedIn,setCheckedIn]=useState(false);
+  const[liveWeather]=useState({icon:"🌤️",feel:"Pleasant evening — 22C",tip:"Great for a pickup run!"});
   const[restaurants,setRestaurants]=useState(DEMO_R);
   const[bags,setBags]=useState(DEMO_B);
   const[bookmarks,setBookmarks]=useState(new Set(["b1","b3"]));
@@ -1177,7 +1180,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:${D?"#060d07":"#E
 .detail{position:absolute;inset:0;background:var(--bg);z-index:600;overflow-y:auto;}
 .toast{position:absolute;bottom:86px;left:50%;transform:translateX(-50%);background:${D?"#E8F0EA":"#111"};color:${D?"#0E1410":"#fff"};padding:10px 20px;border-radius:24px;font-size:12px;font-weight:700;z-index:999;white-space:nowrap;max-width:90%;text-align:center;font-family:system-ui;animation:toastA 2.4s ease forwards;box-shadow:0 4px 20px rgba(0,0,0,0.2);}
 .ticker{background:#1e4d38;padding:5px 0;overflow:hidden;}
-.ticker-inner{display:flex;animation:tick 50s linear infinite;width:max-content;}
+.ticker-inner{display:flex;animation:tick 120s linear infinite;width:max-content;}
 .ticker-item{white-space:nowrap;font-size:10.5px;font-weight:600;color:rgba(255,255,255,0.8);padding:0 28px;}
 @keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes toastA{0%{opacity:0;transform:translateX(-50%) translateY(8px)}15%{opacity:1;transform:translateX(-50%) translateY(0)}78%{opacity:1}100%{opacity:0}}
@@ -1287,28 +1290,88 @@ body{font-family:system-ui,-apple-system,sans-serif;background:${D?"#060d07":"#E
             ))}
           </div>
 
-          {/* Blind bag promo */}
-          <div onClick={()=>setShowBlind(true)} style={{margin:"0 14px 8px",background:"linear-gradient(135deg,#7C3AED,#4C1D95)",borderRadius:14,padding:"11px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}>
-            <div style={{fontSize:26}}>🎰</div>
-            <div style={{flex:1}}>
-              <div style={{fontWeight:800,fontSize:13,color:"#fff",fontFamily:"system-ui"}}>Blind Bag Mode · ₹49</div>
-              <div style={{fontSize:11,color:"rgba(255,255,255,0.7)"}}>Mystery bag from anywhere in Delhi. Spin to find out!</div>
+          {/* ── COMPACT ACTION STRIP ── */}
+          <div style={{padding:"0 14px 12px"}}>
+            <div style={{display:"flex",gap:8,overflowX:"auto",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
+              {[
+                {icon:"🎰",label:"Blind Bag",sub:"Mystery ₹49",color:"linear-gradient(135deg,#7C3AED,#4C1D95)",fn:()=>setShowBlind(true)},
+                {icon:"🤝",label:"Refer",sub:"Earn ₹50",color:"linear-gradient(135deg,#1B4332,#2D6A4F)",fn:()=>setTab("you")},
+                {icon:"🏢",label:"Offices",sub:"₹4,999/mo",color:"linear-gradient(135deg,#1a1a2e,#16213e)",fn:()=>setShowOffices(true)},
+                {icon:"👥",label:"Group Buy",sub:"Split cost",color:"linear-gradient(135deg,#0f4c75,#1b262c)",fn:()=>{const b=enriched.find(x=>x.quantity>0);if(b){setSelBag(b);setShowGroup(true);}}},
+                {icon:"🏆",label:"My Rank",sub:"Leaderboard",color:"linear-gradient(135deg,#92400e,#b7791f)",fn:()=>setTab("leaderboard")},
+                {icon:"🤖",label:"AI Chef",sub:"Recipes",color:"linear-gradient(135deg,#064e3b,#065f46)",fn:()=>{const b=enriched.find(x=>x.quantity>0);if(b){setSelBag(b);setShowAIChef(true);}}},
+              ].map(c=>(
+                <div key={c.label} onClick={c.fn} style={{flexShrink:0,background:c.color,borderRadius:14,padding:"11px 12px",minWidth:84,cursor:"pointer",display:"flex",flexDirection:"column",gap:2,boxShadow:"0 3px 14px rgba(0,0,0,0.22)"}}>
+                  <div style={{fontSize:22,marginBottom:3}}>{c.icon}</div>
+                  <div style={{fontWeight:800,fontSize:11,color:"#fff",fontFamily:"system-ui",lineHeight:1.2}}>{c.label}</div>
+                  <div style={{fontSize:9,color:"rgba(255,255,255,0.65)",fontWeight:600}}>{c.sub}</div>
+                </div>
+              ))}
             </div>
-            <span style={{color:"rgba(255,255,255,0.6)",fontSize:18}}>›</span>
           </div>
 
-          {/* Referral banner */}
-          <div onClick={()=>{setTab("you");}} style={{margin:"0 14px 10px",background:"linear-gradient(135deg,#1B4332,#2D6A4F)",borderRadius:14,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}>
-            <div style={{fontSize:20}}>🤝</div>
-            <div style={{flex:1}}><div style={{fontWeight:800,fontSize:12,color:"#fff",fontFamily:"system-ui"}}>Refer a friend, earn ₹50!</div><div style={{fontSize:10,color:"rgba(255,255,255,0.7)"}}>Share ReBite and get rewarded</div></div>
-            <span style={{color:"rgba(255,255,255,0.5)",fontSize:16}}>›</span>
+          {/* ── WEATHER VIBE + DAILY CHECK-IN ── */}
+          <div style={{padding:"0 14px 10px",display:"flex",gap:8}}>
+            <div style={{flex:1,background:"var(--card)",borderRadius:14,padding:"11px 12px",border:"1px solid var(--border)",display:"flex",flexDirection:"column",justifyContent:"space-around",minHeight:88}}>
+              <div style={{fontSize:26}}>🌤️</div>
+              <div style={{fontWeight:800,fontSize:11,color:"var(--dark)",fontFamily:"system-ui",lineHeight:1.3}}>Pleasant 22°C</div>
+              <div style={{fontSize:9,color:"var(--gray)",marginTop:2}}>Great for a pickup run!</div>
+            </div>
+            <div style={{flex:1.5,background:checkedIn?"var(--gp)":"var(--card)",borderRadius:14,padding:"11px 12px",border:"1.5px solid "+(checkedIn?"#2D6A4F55":"var(--border)"),display:"flex",flexDirection:"column",justifyContent:"space-between",minHeight:88}}>
+              <div>
+                <div style={{fontWeight:800,fontSize:11,color:"var(--dark)",fontFamily:"system-ui"}}>{checkedIn?"✅ Checked in today!":"🌅 Daily Check-in"}</div>
+                <div style={{fontSize:9,color:"var(--gray)",marginTop:2,lineHeight:1.4}}>{checkedIn?"Come back tomorrow for more pts":"Earn 10 pts · Day "+streak+" streak"}</div>
+              </div>
+              {!checkedIn&&<button onClick={()=>{setCheckedIn(true);setStreak(s=>s+1);showToast("🌅 Day "+(streak+1)+" streak! +10 pts");}} style={{marginTop:8,background:"linear-gradient(135deg,#F9C74F,#F4845F)",border:"none",borderRadius:9,padding:"7px 10px",fontWeight:800,fontSize:10,color:"#fff",cursor:"pointer",fontFamily:"system-ui"}}>Check In 🔥</button>}
+              {checkedIn&&<div style={{fontSize:9,color:"#2D6A4F",fontWeight:700}}>+10 pts earned today 🏅</div>}
+            </div>
           </div>
 
-          {/* B2B Offices Banner */}
-          <div onClick={()=>setShowOffices(true)} style={{margin:"0 14px 8px",background:"linear-gradient(135deg,#1a1a2e,#16213e)",borderRadius:14,padding:"11px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}>
-            <div style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>&#x1F3E2;</div>
-            <div style={{flex:1}}><div style={{fontWeight:800,fontSize:12,color:"#fff",fontFamily:"system-ui"}}>ReBite for Offices</div><div style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>Feed your team · ESG credits · From ₹4,999/mo</div></div>
-            <span style={{color:"rgba(255,255,255,0.4)",fontSize:16}}>›</span>
+          {/* ── TONIGHT'S PICKUP WINDOWS ── */}
+          <div style={{padding:"0 14px 10px"}}>
+            <div style={{fontWeight:800,fontSize:13,color:"var(--dark)",fontFamily:"system-ui",marginBottom:8}}>🕐 Tonight's Windows</div>
+            <div style={{background:"var(--card)",borderRadius:14,padding:"12px 14px",border:"1px solid var(--border)"}}>
+              {["17:00","18:00","19:00","20:00","21:00","22:00"].map((hr,hi)=>{
+                const avail=enriched.filter(b=>b.quantity>0&&b.pickup_start<=hr&&b.pickup_end>=hr);
+                return(
+                  <div key={hr} style={{display:"flex",alignItems:"center",gap:10,marginBottom:hi<5?8:0}}>
+                    <div style={{fontSize:10,fontWeight:700,color:"var(--gray)",width:38,flexShrink:0}}>{hr}</div>
+                    <div style={{flex:1,height:7,borderRadius:4,background:"var(--border)",overflow:"hidden"}}>
+                      {avail.length>0&&<div style={{height:"100%",width:Math.min(100,avail.length*30)+"%",background:"linear-gradient(90deg,#52B788,#2D6A4F)",borderRadius:4}}/>}
+                    </div>
+                    <div style={{fontSize:9,fontWeight:700,color:avail.length>0?"#2D6A4F":"var(--border)",width:48,textAlign:"right",flexShrink:0}}>
+                      {avail.length>0?avail.length+" bag"+(avail.length!==1?"s":""):"—"}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ── EXPIRING SOON ── */}
+          <div style={{padding:"0 14px 8px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+              <div style={{fontWeight:800,fontSize:13,color:"var(--dark)",fontFamily:"system-ui"}}>⏰ Grab Before Gone</div>
+              <div style={{background:"#E2374415",borderRadius:7,padding:"3px 8px",fontSize:9,color:"#E23744",fontWeight:700}}>Limited stock</div>
+            </div>
+            <div style={{display:"flex",gap:8,overflowX:"auto",scrollbarWidth:"none"}}>
+              {enriched.filter(b=>b.quantity>0).slice(0,6).map(b=>(
+                <div key={b.id} onClick={()=>{setSelBag(b);setSelTime(b.pickup_start);setMode("pickup");setAddr("");}} style={{flexShrink:0,width:112,borderRadius:13,overflow:"hidden",background:"var(--card)",border:"1px solid var(--border)",cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,0.07)"}}>
+                  <div style={{position:"relative",height:65}}>
+                    <img src={DISH_IMG[b.type]||DISH_IMG.Meal} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    <div style={{position:"absolute",top:4,left:4,background:"#E23744",borderRadius:5,padding:"2px 5px",fontSize:7,fontWeight:800,color:"#fff"}}>⏱ {b.pickup_end}</div>
+                    <div style={{position:"absolute",top:4,right:4,background:"rgba(0,0,0,0.6)",borderRadius:5,padding:"2px 5px",fontSize:7,fontWeight:700,color:"#fff"}}>{b.quantity} left</div>
+                  </div>
+                  <div style={{padding:"6px 8px"}}>
+                    <div style={{fontWeight:800,fontSize:10,color:"var(--dark)",fontFamily:"system-ui",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginBottom:2}}>{b.restaurantName}</div>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <div style={{fontWeight:800,fontSize:12,color:"#2D6A4F"}}>₹{b.price}</div>
+                      <div style={{fontSize:8,color:"#E23744",fontWeight:700,background:"#E2374415",borderRadius:4,padding:"1px 4px"}}>{getDisc(b)}% off</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Cart savings */}
